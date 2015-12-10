@@ -1,9 +1,9 @@
-### Tuts+ Tutorial: An Introduction to ReplayKit
+### Envato Tuts+ Tutorial: iOS 9: An Introduction to ReplayKit
 
 #### Instructor: Davis Allie
 
-In this tutorial, you will learn how to utilise iOS 9's new ReplayKit framework. This framework allows you to record your app's screen and create HD video files shareable directly from your app.
+In this tutorial, you learn how to get started with the ReplayKit framework. The framework was introduced in iOS 9 and it allows users to record their app's screen and create high-definition videos they can share directly from your app.
 
-Complete files for the Tuts+ tutorial: [An Introduction to ReplayKit](http://code.tutsplus.com/tutorials/an-introduction-to-replaykit--cms-25458)
+Source files for the Envato Tuts+ tutorial: [iOS 9: An Introduction to ReplayKit](http://code.tutsplus.com/tutorials/an-introduction-to-replaykit--cms-25458)
 
-**Read this tutorial on [Tuts+](https://code.tutsplus.com)**.
+**Read this tutorial on [Envato Tuts+](https://code.tutsplus.com)**.
