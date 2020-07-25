@@ -28,14 +28,14 @@ class GameViewController: UIViewController {
         
         let lightNode = SCNNode()
         lightNode.light = SCNLight()
-        lightNode.light!.type = SCNLightTypeOmni
+        lightNode.light!.type = SCNLight.LightType.omni
         lightNode.position = SCNVector3(x: 0, y: 10, z: 10)
         scene.rootNode.addChildNode(lightNode)
         
         let ambientLightNode = SCNNode()
         ambientLightNode.light = SCNLight()
-        ambientLightNode.light!.type = SCNLightTypeAmbient
-        ambientLightNode.light!.color = UIColor.darkGrayColor()
+        ambientLightNode.light!.type = SCNLight.LightType.ambient
+        ambientLightNode.light!.color = UIColor.darkGray
         scene.rootNode.addChildNode(ambientLightNode)
         
         self.particleSystem = SCNParticleSystem(named: "Fire", inDirectory: nil)!
@@ -47,27 +47,27 @@ class GameViewController: UIViewController {
         let scnView = self.view as! SCNView
         scnView.scene = scene
         scnView.allowsCameraControl = true
-        scnView.backgroundColor = UIColor.blackColor()
+        scnView.backgroundColor = UIColor.black
     }
     
-    override func viewDidAppear(animated: Bool) {
-        let recordingButton = UIButton(type: .System)
-        recordingButton.setTitle("Start Recording", forState: .Normal)
+    override func viewDidAppear(_ animated: Bool) {
+        let recordingButton = UIButton(type: .system)
+        recordingButton.setTitle("Start Recording", for: .normal)
         recordingButton.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 50)
-        recordingButton.addTarget(self, action: "startRecording:", forControlEvents: .TouchUpInside)
+        recordingButton.addTarget(self, action: #selector(startRecording), for: .touchUpInside)
         
-        let fireButton = UIButton(type: .Custom)
+        let fireButton = UIButton(type: .custom)
         fireButton.frame = CGRect(x: 0, y: 0, width: 70, height: 70)
-        fireButton.backgroundColor = UIColor.greenColor()
+        fireButton.backgroundColor = UIColor.green
         fireButton.clipsToBounds = true
         fireButton.layer.cornerRadius = 35.0
-        fireButton.addTarget(self, action: "fireButtonTouchedDown:", forControlEvents: .TouchDown)
-        fireButton.addTarget(self, action: "fireButtonTouchedUp:", forControlEvents: .TouchUpInside)
-        fireButton.addTarget(self, action: "fireButtonTouchedUp:", forControlEvents: .TouchUpOutside)
+        fireButton.addTarget(self, action: #selector(fireButtonTouchedDown), for: .touchDown)
+        fireButton.addTarget(self, action: #selector(fireButtonTouchedUp), for: .touchUpInside)
+        fireButton.addTarget(self, action: #selector(fireButtonTouchedUp), for: .touchUpOutside)
         fireButton.frame.origin.y = self.view.frame.height - 78
         fireButton.center.x = self.view.center.x
         
-        self.addButtons([recordingButton, fireButton])
+        self.addButtons(buttons: [recordingButton, fireButton])
     }
     
     func addButtons(buttons: [UIButton]) {
@@ -80,75 +80,84 @@ class GameViewController: UIViewController {
         self.buttonWindow.makeKeyAndVisible()
     }
     
-    func startRecording(sender: UIButton) {
-        if RPScreenRecorder.sharedRecorder().available {
-            RPScreenRecorder.sharedRecorder().startRecordingWithMicrophoneEnabled(true, handler: { (error: NSError?) -> Void in
+    @objc func startRecording(sender: UIButton) {
+        if RPScreenRecorder.shared().isAvailable {
+            RPScreenRecorder.shared().startRecording(withMicrophoneEnabled: true) { (error: Error?) -> Void in
                 if error == nil { // Recording has started
-                    sender.removeTarget(self, action: "startRecording:", forControlEvents: .TouchUpInside)
-                    sender.addTarget(self, action: "stopRecording:", forControlEvents: .TouchUpInside)
-                    sender.setTitle("Stop Recording", forState: .Normal)
-                    sender.setTitleColor(UIColor.redColor(), forState: .Normal)
+                    DispatchQueue.main.async {
+                        sender.removeTarget(self, action: #selector(self.startRecording), for: .touchUpInside)
+                        sender.addTarget(self, action: #selector(self.stopRecording), for: .touchUpInside)
+                        sender.setTitle("Stop Recording", for: .normal)
+                        sender.setTitleColor(UIColor.red, for: .normal)
+                    }
+
                 } else {
                     // Handle error
+                    print(error!)
                 }
-            })
+            }
         } else {
             // Hide UI used for recording
         }
     }
     
-    func stopRecording(sender: UIButton) {
-        RPScreenRecorder.sharedRecorder().stopRecordingWithHandler { (previewController: RPPreviewViewController?, error: NSError?) -> Void in
+    @objc func stopRecording(sender: UIButton) {
+        RPScreenRecorder.shared().stopRecording { (previewController: RPPreviewViewController?, error: Error?) -> Void in
             if previewController != nil {
-                let alertController = UIAlertController(title: "Recording", message: "Do you wish to discard or view your gameplay recording?", preferredStyle: .Alert)
-                
-                let discardAction = UIAlertAction(title: "Discard", style: .Default) { (action: UIAlertAction) in
-                    RPScreenRecorder.sharedRecorder().discardRecordingWithHandler({ () -> Void in
-                        // Executed once recording has successfully been discarded
+                DispatchQueue.main.async {
+                    
+                    let alertController = UIAlertController(title: "Recording", message: "Do you wish to discard or view your gameplay recording?", preferredStyle: .alert)
+                    
+                    let discardAction = UIAlertAction(title: "Discard", style: .default) { (action: UIAlertAction) in
+                        RPScreenRecorder.shared().discardRecording(handler: { () -> Void in
+                            // Executed once recording has successfully been discarded
+                        })
+                    }
+                    
+                    let viewAction = UIAlertAction(title: "View", style: .default, handler: { (action: UIAlertAction) -> Void in
+                        previewController?.previewControllerDelegate = self
+                        self.buttonWindow.rootViewController?.present(previewController!, animated: true, completion: nil)
                     })
+                    
+                    alertController.addAction(discardAction)
+                    alertController.addAction(viewAction)
+                    
+                    print(self.buttonWindow.rootViewController as Any)
+                    self.buttonWindow.rootViewController?.present(alertController, animated: true, completion: nil)
+                    
+                    sender.removeTarget(self, action: #selector(self.stopRecording), for: .touchUpInside)
+                    sender.addTarget(self, action: #selector(self.startRecording), for: .touchUpInside)
+                    sender.setTitle("Start Recording", for: .normal)
+                    sender.setTitleColor(UIColor.blue, for: .normal)
                 }
-                
-                let viewAction = UIAlertAction(title: "View", style: .Default, handler: { (action: UIAlertAction) -> Void in
-                    self.buttonWindow.rootViewController?.presentViewController(previewController!, animated: true, completion: nil)
-                })
-                
-                alertController.addAction(discardAction)
-                alertController.addAction(viewAction)
-                
-                print(self.buttonWindow.rootViewController)
-                self.buttonWindow.rootViewController?.presentViewController(alertController, animated: true, completion: nil)
-                
-                sender.removeTarget(self, action: "stopRecording:", forControlEvents: .TouchUpInside)
-                sender.addTarget(self, action: "startRecording:", forControlEvents: .TouchUpInside)
-                sender.setTitle("Start Recording", forState: .Normal)
-                sender.setTitleColor(UIColor.blueColor(), forState: .Normal)
             } else {
                 // Handle error
+                print(error as Any)
             }
         }
     }
-
-    func fireButtonTouchedDown(sender: UIButton) {
+    
+    @objc func fireButtonTouchedDown(sender: UIButton) {
         self.particleSystem.birthRate = 455
     }
     
-    func fireButtonTouchedUp(sender: UIButton) {
+    @objc func fireButtonTouchedUp(sender: UIButton) {
         self.particleSystem.birthRate = 0
     }
     
-    override func shouldAutorotate() -> Bool {
+    override var shouldAutorotate: Bool {
         return true
     }
     
-    override func prefersStatusBarHidden() -> Bool {
+    override var prefersStatusBarHidden: Bool {
         return true
     }
     
-    override func supportedInterfaceOrientations() -> UIInterfaceOrientationMask {
-        if UIDevice.currentDevice().userInterfaceIdiom == .Phone {
-            return .AllButUpsideDown
+    override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            return .allButUpsideDown
         } else {
-            return .All
+            return .all
         }
     }
     
@@ -157,4 +166,15 @@ class GameViewController: UIViewController {
         // Release any cached data, images, etc that aren't in use.
     }
 
+}
+
+extension GameViewController: RPPreviewViewControllerDelegate {
+    func previewControllerDidFinish(_ previewController: RPPreviewViewController) {
+        previewController.previewControllerDelegate = nil
+        previewController.dismiss(animated: true, completion: nil)
+    }
+    
+    func previewController(_ previewController: RPPreviewViewController, didFinishWithActivityTypes activityTypes: Set<String>) {
+        print(activityTypes)
+    }
 }
