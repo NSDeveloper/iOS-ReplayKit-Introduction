@@ -53,7 +53,13 @@ class GameViewController: UIViewController {
     override func viewDidAppear(_ animated: Bool) {
         let recordingButton = UIButton(type: .system)
         recordingButton.setTitle("Start Recording", for: .normal)
-        recordingButton.frame = CGRect(x: 0, y: 0, width: self.view.frame.width, height: 50)
+        var recordingY: CGFloat = 0
+        var fireY = self.view.frame.height - 78
+        if #available(iOS 11.0, *) {
+            recordingY = self.view.safeAreaInsets.top
+            fireY -= self.view.safeAreaInsets.bottom
+        }
+        recordingButton.frame = CGRect(x: 0, y: recordingY, width: self.view.frame.width, height: 50)
         recordingButton.addTarget(self, action: #selector(startRecording), for: .touchUpInside)
         
         let fireButton = UIButton(type: .custom)
@@ -64,7 +70,7 @@ class GameViewController: UIViewController {
         fireButton.addTarget(self, action: #selector(fireButtonTouchedDown), for: .touchDown)
         fireButton.addTarget(self, action: #selector(fireButtonTouchedUp), for: .touchUpInside)
         fireButton.addTarget(self, action: #selector(fireButtonTouchedUp), for: .touchUpOutside)
-        fireButton.frame.origin.y = self.view.frame.height - 78
+        fireButton.frame.origin.y = fireY
         fireButton.center.x = self.view.center.x
         
         self.addButtons(buttons: [recordingButton, fireButton])
@@ -116,6 +122,7 @@ class GameViewController: UIViewController {
                     
                     let viewAction = UIAlertAction(title: "View", style: .default, handler: { (action: UIAlertAction) -> Void in
                         previewController?.previewControllerDelegate = self
+                        previewController?.modalPresentationStyle = .fullScreen
                         self.buttonWindow.rootViewController?.present(previewController!, animated: true, completion: nil)
                     })
                     
